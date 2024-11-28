@@ -4,7 +4,7 @@ I'm a **Data Scientist** and **Data Engineer** passionate about transforming dat
 
 ## 🛠️ Technologies & Skills
 
-- **Programming Languages:** Python, R, SQL, C++
+- **Programming Languages:** Python , R , SQL , Scala
 - **Data Engineering Tools:** Apache Kafka, Airflow, BigQuery, Docker
 - **Machine Learning Frameworks:** TensorFlow, Scikit-learn, PyTorch
 - **Databases:** MySQL, PostgreSQL, MongoDB
