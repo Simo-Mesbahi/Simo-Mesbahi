@@ -1,0 +1,86 @@
+version: "3.8" # La version est facultative avec Docker Compose moderne
+
+services:
+  # Service PostgreSQL
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow_db
+    ports:
+      - "5433:5433"
+    healthcheck: # Vérification que PostgreSQL est prêt
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 10s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - airflow_network
+
+  # Service Airflow Webserver
+  airflow-webserver:
+    image: apache/airflow:2.5.0
+    container_name: airflow-webserver
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://airflow:airflow@postgres:5432/airflow_db"
+      AIRFLOW__CORE__EXECUTOR: "LocalExecutor"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+    command: ["webserver"]
+    networks:
+      - airflow_network
+
+  # Service Airflow Scheduler
+  airflow-scheduler:
+    image: apache/airflow:2.5.0
+    container_name: airflow-scheduler
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://airflow:airflow@postgres:5432/airflow_db"
+      AIRFLOW__CORE__EXECUTOR: "LocalExecutor"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+    command: ["scheduler"]
+    networks:
+      - airflow_network
+
+  # Service d'initialisation de la base de données Airflow
+  airflow-init:
+    image: apache/airflow:2.5.0
+    container_name: airflow-init
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://airflow:airflow@postgres:5432/airflow_db"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+    entrypoint: ["airflow", "db", "init"] # Initialise la base de données
+    networks:
+      - airflow_network
+
+volumes:
+  postgres_data:
+  dags:
+  logs:
+  plugins:
+
+networks:
+  airflow_network:
+    driver: bridge
